@@ -11,17 +11,17 @@ from chequer_draw import DrawArea
 
 #===============================================================
 class Chequer(DrawArea):
-    
+
     def __init__(self, pt):
         self.pt = pt
         self.build()
-    
+
     #a تحديد الرقعة لوضع حرف----------------------------------------------
     def valid_chequer(self, x, y):
         if int(x) in range(int(self.st), int(self.st+self.bwn*15)) and int(y) in range(int(self.br), int(self.br+self.bwn*15)):
             return True
         return False
-    
+
     #a تحديد الخانة المناسبة لوضع حرف----------------------------------------------
     def valid_cell(self, x, y):
         if self.valid_chequer(x, y):
@@ -32,7 +32,7 @@ class Chequer(DrawArea):
                 self.pt.now_cell = y0*15+x0
                 return True
         return False
-        
+
     #a تحديد الخانة الموضوع فيها حرف غير مثبت ----------------------------------------------
     def new_cell(self, x, y):
         y0 = int((y-self.br)/self.bwn)
@@ -41,7 +41,7 @@ class Chequer(DrawArea):
         if n_cell in self.pt.dict_new.keys():
             return n_cell
         return None
-    
+
     def chose_letter(self, btn):
         letter = btn.get_name()
         play_sound('drop')
@@ -50,7 +50,7 @@ class Chequer(DrawArea):
         try: model.foreach(self.rm_item_in_store)
         except: pass
         self.pt.cells_empty_letter.append(self.pt.now_cell)
-    
+
     def dialog_chose_letter(self, *a):
         dlg = Gtk.Dialog(parent=self.pt, title=_('Select a letter for the blank piece.'))
         dlg.set_default_size(450, 300)
@@ -75,7 +75,7 @@ class Chequer(DrawArea):
         scrolled.add(flowbox)
         area.pack_start(scrolled, True, True, 0)
         dlg.show_all()
-     
+
     def set_letter_in_cell(self, ev):
         items = self.pt.sideletters.get_selected_items() 
         if len(items) > 0:
@@ -91,7 +91,7 @@ class Chequer(DrawArea):
                 self.pt.sideletters.get_model().remove(selected_iter)
         else:
             self.show_letters_popover(ev)
-    
+
     #a إذا كانت إحدى الخانتين ذات قطعة فارغة-------------------
     def change_place_blank_tile(self, cell1, cell2):
         if cell1 in self.pt.cells_empty_letter and cell2 in self.pt.cells_empty_letter:
@@ -102,7 +102,7 @@ class Chequer(DrawArea):
         elif cell2 in self.pt.cells_empty_letter:
             self.pt.cells_empty_letter.append(cell1)
             self.pt.cells_empty_letter.remove(cell2)
-            
+
     #----------------------------------------------------------- 
     def swap_pieces(self, cell, n):
         #a إذا كانت الخانة الجديدة مشغولة----------------
@@ -124,7 +124,7 @@ class Chequer(DrawArea):
                 del self.pt.dict_new[self.pt.select_cell]
                 self.pt.dict_new[self.pt.now_cell] = letter1
                 self.pt.select_cell = None
-    
+
     def rm_item_in_store(self, model, path, i):
         letter = model.get(i,1)[0]
         if letter.replace('"', '').replace("'", "") == self.pt.now_letter: 
@@ -132,7 +132,7 @@ class Chequer(DrawArea):
             return True 
         else:
             return False
-     
+
     def set_letter_popover(self, btn, pop): 
         pop.hide()
         self.pt.now_letter = btn.get_name().replace('"', '').replace("'", "")
@@ -146,7 +146,7 @@ class Chequer(DrawArea):
             except: pass
         self.queue_draw()
 
-     
+
     def show_letters_popover(self, ev): 
         if self.pt.ended: return
         #----------------------------------------------
@@ -166,7 +166,7 @@ class Chequer(DrawArea):
             n = 8
         else: 
             rect.y = ev.y
-            n = 4
+            n = 8
         pop.set_pointing_to(rect)
         pop.set_position(Gtk.PositionType.TOP)
         #----------------------------------------------
@@ -180,12 +180,16 @@ class Chequer(DrawArea):
             btn.set_name(letter)
             btn.connect('clicked', self.set_letter_popover, pop)
             flowbox.add(btn)
-        clo = Gtk.Button('ألغ')
+        img = Gtk.Image.new_from_icon_name('window-close-symbolic', 2)
+        clo = Gtk.Button()
+        clo.set_image(img)
+        clo.get_style_context().add_class(Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION)
+        clo. set_relief(Gtk.ReliefStyle.NONE)
         clo.connect('clicked', lambda *a: pop.hide())
         flowbox.add(clo)
         pop.add(flowbox)
         pop.show_all()
-     
+
     #-----------------------------------------------------------
     def drag_motion_cb(self, widget, cn, x, y, time):
         b = self.valid_cell(x, y)
@@ -193,7 +197,7 @@ class Chequer(DrawArea):
         else: self.no_drop = True
         self.queue_draw()
         return True
-    
+
     #-----------------------------------------------------------
     def button_press_scrabble(self, widget, ev):
         new_cell = self.new_cell(ev.x, ev.y)
@@ -211,7 +215,7 @@ class Chequer(DrawArea):
                     self.swap_pieces(new_cell, 1)
                 else:
                     self.pt.select_cell = None
-                    
+
             #a الضغط بيمين الفأرة--------------------------
             elif ev.button == 3:
                 if new_cell != None:
@@ -236,7 +240,7 @@ class Chequer(DrawArea):
         elif ev.x < self.w-7 and config.getn('autohide_letters') == 1 and not self.pt.vb_letters.get_no_show_all():
             self.pt.vb_letters.set_no_show_all(True)
             self.pt.vb_letters.hide()
-        
+
 
     #-----------------------------------------------------------
     def drag_leave_cb(self, widget, cn, time):
@@ -249,7 +253,7 @@ class Chequer(DrawArea):
             self.queue_draw()
         self.no_drop = False
         return True
-    
+
     def build(self, *a):
         DrawArea.__init__(self, self.pt)
         self.set_events(Gdk.EventMask.EXPOSURE_MASK
@@ -261,6 +265,3 @@ class Chequer(DrawArea):
         self.connect("drag_leave", self.drag_leave_cb)
         self.connect("button-press-event", self.button_press_scrabble)
         self.connect("motion-notify-event", self.motion_notify_cb)
-       
-        
-        
